@@ -8,28 +8,28 @@ import sys, os, mailparser, base64, re, pandas as pd, subprocess, networkx as nx
 
 class parse_emails():
 	"""Classe para processamento de emails"""
-	def __init__(self, filepath, id_inv):
+	def __init__(self, filepath, id_inv, exitpath):
 		self.bank_words = ['caixa','banco','itaú','bradesco','santander']
 		self.filepath = filepath
 		self.id_inv = id_inv
 		self.nome_relatorio = 'relatório_emails_investigacao_%s.xlsx' % (str(self.id_inv),)
-		self.nome_pasta = self.filepath[:-1]+'_inv_'+str(self.id_inv)
+		self.nome_pasta = exitpath
 		subprocess.Popen('mkdir "%s"' % (self.nome_pasta,), shell=True)
 		self.graph = None
 		self.words_of_interest = ['urgente','comprovante','extrato','cuidado']
 	
-	def docs_to_txt(self):
+	def docs_to_txt(self, exitpath):
 		r = recursive_folders()
 		anexos = r.find_files(self.filepath)
 		doc2txt = pdf_to_text()
 		for anexo in anexos:
 			if (anexo[-4:] == '.doc' or anexo[-4:] == 'docx' or anexo[-4:] == '.pdf'):
 				texto = doc2txt.convert_Tika(anexo)
-				arquivo = open(anexo[:-4]+'.txt','w')
+				arquivo = open(exitpath+'\\'+anexo[:-4]+'.txt','w')
 				arquivo.write(texto)
 
-	def email_bank_transactions(self):
-		df = pd.read_excel(self.nome_relatorio)
+	def email_bank_transactions(self, exitpath):
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		lista_emails_transacoes = []
 		for index, row in df.iterrows():
 			try:
@@ -39,22 +39,22 @@ class parse_emails():
 				print(e)
 		return lista_emails_transacoes
 
-	def email_contacts(self):
-		df = pd.read_excel(self.nome_relatorio)
+	def email_contacts(self, exitpath):
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		df = df.fillna(' ')
 		return list(df['remetente_email'].unique()) + list(df['destinatário_email'].unique())
 
-	def email_names(self):
-		df = pd.read_excel(self.nome_relatorio)
+	def email_names(self, exitpath):
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		df = df.fillna(' ')
 		return list(df['nome_email'].unique())
 
-	def email_subjects(self):
-		df = pd.read_excel(self.nome_relatorio)
+	def email_subjects(self, exitpath):
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		df = df.fillna(' ')
 		return list(df['assunto_limpo'].unique())
 
-	def email_to_excel(self):
+	def email_to_excel(self, exitpath):
 		lista_emails = [i for i in self.paths_to_emails() if i[-4:] == '.msg']
 		rows = []
 		for msg in lista_emails:
@@ -86,11 +86,11 @@ class parse_emails():
 			index = [i for i in range(len(rows))]
 			df = pd.DataFrame(rows,index=index)
 			df = df.applymap(lambda x: x.encode('unicode-escape','replace').decode('utf-8') if isinstance(x, str) else x)
-			df.to_excel(self.nome_relatorio,index=False)
+			df.to_excel(exitpath+'\\'+self.nome_relatorio,index=False)
 			self.docs_to_txt()
 
-	def email_to_graph(self):
-		df = pd.read_excel(self.nome_relatorio)
+	def email_to_graph(self, exitpath):
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		df = df.fillna(' ')
 		self.graph = nx.DiGraph()
 		for index, row in df.iterrows():
@@ -150,7 +150,7 @@ class parse_emails():
 		return r.find_files(self.filepath)
 
 	def relatorio_entidade(self,nome_entidade,nomes_testar):
-		df = pd.read_excel(self.nome_relatorio)
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		colunas_testar = ['corpo','destinatário_nome','destinatário_email','remetente_email','assunto_limpo','anexos']
 		rows = []
 		for ind,row in df.iterrows():
@@ -176,32 +176,32 @@ class parse_emails():
 		df = df.applymap(lambda x: x.encode('unicode-escape','replace').decode('utf-8') if isinstance(x, str) else x)
 		df.to_excel('relatório_'+nome_entidade+'.xlsx',index=False)
 
-	def relatorio_geral(self, report_name=None):
+	def relatorio_geral(self, exitpath, report_name=None):
 		if not report_name:
 			report_name='relatório_geral_emails_%s.txt' % (self.id_inv,)
-		try:
-			df = pd.read_excel(self.nome_relatorio)
-		except:
-			return
-		df = df.fillna(' ')
-		contacts = self.email_contacts()
-		names_email = self.email_names()
-		subjects = self.email_subjects()
-		transactions = self.email_bank_transactions()
-		relatorio_txt = open('relatório_geral_%s.txt' % (str(self.id_inv),),'w')
-		relatorio_txt.write('Arquivos de emails disponíveis:\n\n\n')
-		for n in names_email:
-			relatorio_txt.write(str(n)+'\n')
-		relatorio_txt.write('\n\nAssuntos dos emails:\n\n\n')
-		for s in subjects:
-			relatorio_txt.write(str(s)+'\n')
-		relatorio_txt.write('\n\nContatos que receberam ou enviaram emails:\n\n\n')
-		for c in contacts:
-			relatorio_txt.write(str(c)+'\n')
-		relatorio_txt.write('\n\nDatas e nomes dos emails que contém transações bancárias:\n\n\n')
-		for t in transactions:
-			relatorio_txt.write(str(t)+'\n')
-		relatorio_txt.close()
+
+		#caso não exista o relatório não processa ? - Faz sentido isso?
+		if(os.path.isfile(exitpath+'\\'+self.nome_relatorio)):
+			df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
+			df = df.fillna(' ')
+			contacts = self.email_contacts(exitpath)
+			names_email = self.email_names(exitpath)
+			subjects = self.email_subjects(exitpath)
+			transactions = self.email_bank_transactions(exitpath)
+			relatorio_txt = open(exitpath+'\\'+'relatório_geral_%s.txt' % (str(self.id_inv),),'w')
+			relatorio_txt.write('Arquivos de emails disponíveis:\n\n\n')
+			for n in names_email:
+				relatorio_txt.write(str(n)+'\n')
+			relatorio_txt.write('\n\nAssuntos dos emails:\n\n\n')
+			for s in subjects:
+				relatorio_txt.write(str(s)+'\n')
+			relatorio_txt.write('\n\nContatos que receberam ou enviaram emails:\n\n\n')
+			for c in contacts:
+				relatorio_txt.write(str(c)+'\n')
+			relatorio_txt.write('\n\nDatas e nomes dos emails que contém transações bancárias:\n\n\n')
+			for t in transactions:
+				relatorio_txt.write(str(t)+'\n')
+			relatorio_txt.close()
 
 	def text_to_html(self, texto):
 		return texto.replace('\t',4*'&nbsp;').replace('\n','<br/>')
@@ -216,26 +216,27 @@ class parse_emails():
 		topicos = topM.lda_Model(textos, npasses=1, num_words=10)
 		topM.topic_to_img(topicos, prefix=prefix)
 
-	def word_to_vec_textos(self):
+	def word_to_vec_textos(self, exitpath):
 		doc2txt = pdf_to_text()
 		r = recursive_folders()
 		w2v = word2vec_textos()
 		textos = [doc2txt.convert_Tika(t) for t in r.find_files(self.filepath) if t[-4:] == '.txt' or t[-5:] == '.html']
-		df = pd.read_excel(self.nome_relatorio)
+		df = pd.read_excel(exitpath+'\\'+self.nome_relatorio)
 		for index, row in df.iterrows():
 			textos.append(str(row['corpo']))
 		sentencas = [w2v.split_sentences(texto) for texto in textos]
 		w2v.create_model(sentencas)
 
-def main(filepath, id_inv):
-	p = parse_emails(filepath, id_inv)
-	p.email_to_excel()
-	p.docs_to_txt()
-	p.relatorio_geral()
+def main(filepath, id_inv, exitpath):
+	p = parse_emails(filepath, id_inv, exitpath)
+	p.email_to_excel(exitpath)
+	p.docs_to_txt(exitpath)
+	p.relatorio_geral(exitpath)
 	p.topics()
-	p.word_to_vec_textos()
+	p.word_to_vec_textos(exitpath)
 
 if __name__ == '__main__':
 	filepath = sys.argv[1]
 	id_inv = sys.argv[2]
-	main(filepath, id_inv)
+	exitpath = sys.argv[3]
+	main(filepath, id_inv, exitpath)

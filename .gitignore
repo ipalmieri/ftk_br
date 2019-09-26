@@ -3,3 +3,11 @@ rascunhos.py
 *.pyc
 *.pickle
 *.bin
+*.xlsx
+/relatório_geral_22.txt
+/PythonForensics.sln
+/.vs
+/GUI/GUI.pyproj
+/GUI/.vs/GUI/v15/.suo
+/ftk_br.pyproj
+/PythonForensics.pyproj

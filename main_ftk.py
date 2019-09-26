@@ -14,8 +14,8 @@ RECURSIVE_CLASS = recursive_folders()
 
 def indice_arquivos(filepaths,id_inv,path_inicial):
 	i = index_files(filepaths)
-	i.save_paths_file(path_inicial+'indice_arquivos_investigacao_'+str(id_inv),list_paths=filepaths, csv_file=True)
-
+	i.save_paths_file(path_inicial+'indice_arquivos_investigacao_'+str(id_inv),id_inv,list_paths=filepaths, csv_file=True)
+    
 def indice_palavras_arquivos(filepath, id_inv, path_inicial):
 	df = pd.read_csv(filepath)
 	paths = []

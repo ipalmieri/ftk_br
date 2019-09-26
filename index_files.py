@@ -42,19 +42,19 @@ class index_files():
 		data_frame = pd.DataFrame(rows, index=[i for i in range(len(rows))])
 		return data_frame
 
-	def save_paths_file(self, name_file, id_inv, list_paths=False, csv_file=False, excel_file=False):
+	def save_paths_file(self, name_file, exitpath, id_inv, list_paths=False, csv_file=False, excel_file=False):
 		if list_paths:
 			df = self.list_paths_df(list_paths)
 		else:
 			df = self.paths_df()
 		if csv_file:
-			df.to_csv(name_file+'.csv',index=False)
+			df.to_csv(exitpath+'\\'+name_file+'.csv',index=False)
 		elif excel_file:
-			df.to_excel(name_file+'.xlsx',index=False)
+			df.to_excel(exitpath+'\\'+name_file+'.xlsx',index=False)
 
-def main(files_path, id_inv):
+def main(files_path, id_inv, exitpath):
 	i = index_files(files_path)
-	i.save_paths_file('indexação_arquivos_%s' % (str(id_inv),), id_inv, excel_file=True)
+	i.save_paths_file('indexação_arquivos_%s' % (str(id_inv),),exitpath, id_inv, excel_file=True)
 
 if __name__ == '__main__':
-	main(sys.argv[1],sys.argv[2])
+	main(sys.argv[1],sys.argv[2], sys.argv[3])
