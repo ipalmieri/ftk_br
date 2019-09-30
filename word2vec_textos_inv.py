@@ -2,10 +2,11 @@ from gensim.models import Word2Vec
 from recursive_folders import recursive_folders
 from pdf_to_text import pdf_to_text
 from stopwords_pt import stopwords_pt
-import sys, re, json, pickle
+import sys, re, json, pickle, string
 
+sufixoarqwordtovec ='_Word2Vec_index.pkl'
 def main(filepaths,id_investigacao,exitpath):
-	indexFilePath = exitpath+'/'+id_investigacao + '_Word2Vec_index.pkl'
+	indexFilePath = exitpath+'/'+id_investigacao + sufixoarqwordtovec
 	id_inv = str(id_investigacao)
 	pdf2txt = pdf_to_text()
 	stpw = stopwords_pt()
@@ -20,7 +21,7 @@ def main(filepaths,id_investigacao,exitpath):
 	model2vec = Word2Vec(texts2vec, min_count=1)
 	words = { 
 		"brand": {"brand" : "brand" }
-    }
+	}
 	words.clear()
 	for word in model2vec.wv.vocab:
 		if len(word) > 3:
@@ -42,6 +43,25 @@ def main(filepaths,id_investigacao,exitpath):
 	#Como ler 
 	#with open(indexFilePath, 'rb') as f:
 	#	words2 = pickle.load(f)
+
+def pesquisa(exitpath, id_inv, palavra ):
+	indexFilePath = exitpath+'/'+id_inv + sufixoarqwordtovec
+	#retira pontuação pq aoprocessar ele tira
+	palavra = palavra.translate(str.maketrans('', '', string.punctuation))
+	words2 = { 
+		"brand": {"brand" : "brand" }
+	}
+	words2.clear()
+	with open(indexFilePath, 'rb') as f:
+		words2 = pickle.load(f)
+
+	if palavra in words2.keys():
+		return words2[palavra]
+	return words2
+
+
+def sufixo():
+	return sufixoarqwordtovec
 
 if __name__ == '__main__':
 	main(sys.argv[1],sys.argv[2],sys.argv[3])
